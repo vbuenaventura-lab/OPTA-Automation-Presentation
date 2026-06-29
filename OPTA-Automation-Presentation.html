@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OPTA Test Automation Journey</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand-dark:   #0D1B2A;
+      --brand-mid:    #1B3A5C;
+      --brand-accent: #2E86C1;
+      --brand-light:  #5DADE2;
+      --brand-gold:   #F4D03F;
+      --brand-green:  #27AE60;
+      --brand-red:    #E74C3C;
+      --text-main:    #ECF0F1;
+      --text-muted:   #BDC3C7;
+      --card-bg:      rgba(255,255,255,0.07);
+      --card-border:  rgba(255,255,255,0.12);
+    }
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--brand-dark);
+      color: var(--text-main);
+      overflow: hidden;
+    }
+
+    /* ─── Slide Container ───────────────────────────────────────────────────── */
+    #deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 48px 72px;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity .45s ease, transform .45s ease;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .slide.exit-left {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ─── Slide Backgrounds ─────────────────────────────────────────────────── */
+    .bg-hero    { background: linear-gradient(135deg, #0D1B2A 0%, #1B3A5C 60%, #2E86C1 100%); }
+    .bg-dark    { background: linear-gradient(160deg, #0D1B2A 0%, #142030 100%); }
+    .bg-mid     { background: linear-gradient(160deg, #142030 0%, #1B3A5C 100%); }
+    .bg-accent  { background: linear-gradient(135deg, #1B3A5C 0%, #2E86C1 100%); }
+    .bg-dark2   { background: linear-gradient(160deg, #0a1520 0%, #1a2f45 100%); }
+
+    /* ─── Typography ────────────────────────────────────────────────────────── */
+    .slide-label {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--brand-light);
+      margin-bottom: 14px;
+    }
+    h1 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; line-height: 1.15; }
+    h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 700; margin-bottom: 28px; }
+    h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; color: var(--brand-light); }
+    p, li { font-size: clamp(.9rem, 1.5vw, 1.05rem); line-height: 1.65; color: var(--text-muted); }
+    strong { color: var(--text-main); }
+    .highlight { color: var(--brand-gold); font-weight: 700; }
+    .green    { color: var(--brand-green); font-weight: 700; }
+    .accent   { color: var(--brand-light); }
+
+    /* ─── Layout Helpers ────────────────────────────────────────────────────── */
+    .full-width  { width: 100%; }
+    .two-col     { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; width: 100%; }
+    .three-col   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; }
+    .center      { text-align: center; }
+
+    /* ─── Cards ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 22px 26px;
+    }
+    .card.accent-top { border-top: 3px solid var(--brand-accent); }
+    .card.gold-top   { border-top: 3px solid var(--brand-gold); }
+    .card.green-top  { border-top: 3px solid var(--brand-green); }
+    .card.red-top    { border-top: 3px solid var(--brand-red); }
+
+    /* ─── Lists ──────────────────────────────────────────────────────────────── */
+    ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    ul li::before { content: '▸'; color: var(--brand-light); margin-right: 10px; font-size: .9rem; }
+    ol { padding-left: 1.4em; display: flex; flex-direction: column; gap: 10px; }
+    ol li { color: var(--text-muted); font-size: clamp(.88rem, 1.4vw, 1rem); }
+
+    /* ─── Code Blocks ────────────────────────────────────────────────────────── */
+    .code-block {
+      background: #0a1520;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: clamp(.72rem, 1.2vw, .88rem);
+      line-height: 1.6;
+      color: #a8d8f0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      width: 100%;
+    }
+    .code-block .kw  { color: #569cd6; }
+    .code-block .fn  { color: #dcdcaa; }
+    .code-block .str { color: #ce9178; }
+    .code-block .cm  { color: #6a9955; font-style: italic; }
+    .code-block .num { color: #b5cea8; }
+
+    /* ─── Step Badges ────────────────────────────────────────────────────────── */
+    .step-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+    .step-num {
+      min-width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--brand-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: .9rem;
+      color: white;
+      flex-shrink: 0;
+    }
+    .step-content h4 { font-size: .95rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+    .step-content p  { font-size: .85rem; }
+
+    /* ─── Arrow Flow ─────────────────────────────────────────────────────────── */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      margin: 18px 0;
+    }
+    .flow-box {
+      background: var(--brand-mid);
+      border: 1px solid var(--brand-accent);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: center;
+      min-width: 100px;
+    }
+    .flow-arrow { color: var(--brand-light); font-size: 1.4rem; font-weight: 700; }
+
+    /* ─── Tag Pills ──────────────────────────────────────────────────────────── */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tag {
+      background: rgba(46,134,193,.25);
+      border: 1px solid var(--brand-accent);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--brand-light);
+    }
+    .tag.gold  { background: rgba(244,208,63,.15); border-color: var(--brand-gold);  color: var(--brand-gold);  }
+    .tag.green { background: rgba(39,174,96,.15);  border-color: var(--brand-green); color: #58d68d; }
+
+    /* ─── Divider ────────────────────────────────────────────────────────────── */
+    .divider {
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand-accent), var(--brand-light));
+      border-radius: 2px;
+      margin: 16px 0;
+    }
+
+    /* ─── Slide Counter ──────────────────────────────────────────────────────── */
+    #counter {
+      position: fixed;
+      bottom: 22px;
+      right: 28px;
+      font-size: .78rem;
+      color: var(--text-muted);
+      z-index: 100;
+    }
+
+    /* ─── Nav Buttons ────────────────────────────────────────────────────────── */
+    #nav {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 100;
+    }
+    .nav-btn {
+      background: rgba(46,134,193,.35);
+      border: 1px solid var(--brand-accent);
+      border-radius: 8px;
+      color: white;
+      padding: 8px 22px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .nav-btn:hover { background: var(--brand-accent); }
+
+    /* ─── Progress Bar ───────────────────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--brand-accent), var(--brand-gold));
+      transition: width .4s ease;
+      z-index: 200;
+    }
+
+    /* ─── Comparison Table ───────────────────────────────────────────────────── */
+    .compare-table { width: 100%; border-collapse: collapse; }
+    .compare-table th {
+      background: var(--brand-mid);
+      padding: 10px 16px;
+      text-align: left;
+      font-size: .88rem;
+      color: var(--brand-light);
+    }
+    .compare-table td {
+      padding: 10px 16px;
+      font-size: .85rem;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      color: var(--text-muted);
+    }
+    .compare-table tr:hover td { background: rgba(255,255,255,.04); }
+    .yes { color: var(--brand-green); font-weight: 700; }
+    .no  { color: var(--brand-red);   font-weight: 700; }
+    .partial { color: var(--brand-gold); font-weight: 700; }
+
+    /* ─── Big Stat ───────────────────────────────────────────────────────────── */
+    .stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; width: 100%; }
+    .stat-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-num { font-size: clamp(1.8rem, 3vw, 2.8rem); font-weight: 800; color: var(--brand-gold); }
+    .stat-label { font-size: .82rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ─── Hero Subtitle ──────────────────────────────────────────────────────── */
+    .hero-sub {
+      font-size: clamp(1rem, 1.8vw, 1.3rem);
+      color: var(--brand-light);
+      margin-top: 16px;
+    }
+    .hero-meta {
+      margin-top: 32px;
+      font-size: .9rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 16px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* ─── Slide Picker ───────────────────────────────────────────────────────── */
+    #nav-center { position: relative; }
+    #slide-picker-btn {
+      background: rgba(46,134,193,.35);
+      border: 1px solid var(--brand-accent);
+      border-radius: 8px;
+      color: white;
+      padding: 8px 16px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 260px;
+      justify-content: center;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    #slide-picker-btn:hover { background: var(--brand-accent); }
+    #nav-slide-num  { color: var(--brand-light); font-weight: 800; flex-shrink: 0; }
+    #nav-slide-sep  { color: var(--text-muted); }
+    #nav-slide-title { overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
+    #nav-slide-caret { color: var(--brand-light); margin-left: 2px; font-size: .75rem; }
+    #slide-picker {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0d1e30;
+      border: 1px solid var(--brand-accent);
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 360px;
+      max-height: 420px;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 300;
+      box-shadow: 0 8px 32px rgba(0,0,0,.7);
+    }
+    #slide-picker.open { display: flex; }
+    .picker-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s;
+      border: 1px solid transparent;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .picker-item:hover { background: rgba(46,134,193,.25); }
+    .picker-item.current { background: rgba(46,134,193,.2); border-color: var(--brand-accent); }
+    .picker-num  { min-width: 32px; font-size: .75rem; color: var(--brand-light); font-weight: 800; flex-shrink: 0; }
+    .picker-info { display: flex; flex-direction: column; overflow: hidden; }
+    .picker-section { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; }
+    .picker-title   { font-size: .88rem; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ─── Slide 10 compact font overrides ───────────────────────────────────── */
+    #s10 h2          { font-size: clamp(1.2rem, 2.2vw, 1.7rem); margin-bottom: 14px; }
+    #s10 h3          { font-size: .95rem; margin-bottom: 6px; }
+    #s10 p, #s10 li  { font-size: clamp(.78rem, 1.1vw, .88rem); line-height: 1.5; }
+    #s10 .card       { padding: 14px 18px; }
+    #s10 .three-col  { gap: 14px; }
+    #s10 code        { font-size: .8rem; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="deck">
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 1 ══ -->
+  <div class="slide bg-hero active" id="s1">
+    <div class="center full-width">
+      <div class="slide-label">Spinifex Group · OPTA Project</div>
+      <h1>Test Automation Journey</h1>
+      <p class="hero-sub">From Manual XPath Hunting to AI-Powered Spec Generation</p>
+      <div class="divider" style="margin: 20px auto;"></div>
+      <div class="three-col" style="margin-top:32px; max-width:780px; margin-left:auto; margin-right:auto;">
+        <div class="card accent-top center">
+          <div style="font-size:2rem; margin-bottom:6px;">🔍</div>
+          <h3>Manual Era</h3>
+          <p>Inspect element, hand-crafted XPath, manual coding</p>
+        </div>
+        <div class="card gold-top center">
+          <div style="font-size:2rem; margin-bottom:6px;">⚡</div>
+          <h3>AI-Assisted</h3>
+          <p>GitHub Copilot spec generator driven by Zephyr steps</p>
+        </div>
+        <div class="card green-top center">
+          <div style="font-size:2rem; margin-bottom:6px;">🔗</div>
+          <h3>Integrated</h3>
+          <p>Zephyr, Jira, Allure & Reporting</p>
+        </div>
+      </div>
+      <div class="hero-meta">Presentation for Stakeholder Review · June 2026</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 2 ══ -->
+  <div class="slide bg-dark" id="s2">
+    <div class="full-width">
+      <div class="slide-label">About the Project</div>
+      <h2>What is OPTA?</h2>
+      <div class="two-col">
+        <div>
+          <p style="margin-bottom:16px;"><strong>OPTA</strong> stands for <strong>Onpremise Test Automation</strong> — it is a <strong>Jira project</strong> used to track automation work for Spinifex Solutions (Easy Reporter, Easy Clone, Easy Documents, and more).</p>
+          <p style="margin-bottom:16px;">Each <strong>OPTA-XX</strong> ticket in Jira represents a scenario to be automated. Linked to it is an <strong>OPSH-XXXX</strong> ticket (a TEST-type ticket) — this is where the actual test cases and Zephyr steps live.</p>
+          <p style="margin-bottom:16px;">Our automation goal: validate that each product behaves correctly across <strong>multiple SAP environments</strong> (MT and VT systems) before every release — and to support the manual execution of regression test cases, especially those run every patch.</p>
+          <div class="tags">
+            <span class="tag">Easy Reporter</span>
+            <span class="tag">Easy Clone</span>
+            <span class="tag">Easy Documents</span>
+            <span class="tag">Easy Helpdesk</span>
+            <span class="tag">Easy HXM</span>
+            <span class="tag">Easy Go-Live</span>
+            <span class="tag">Easy Balance</span>
+            <span class="tag">Easy Validate</span>
+          </div>
+        </div>
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>SAP WebGUI in a Browser</h4>
+              <p>The UI is rendered by SAP's web engine — standard browser tools apply, but the DOM is complex and deeply nested.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Multiple Environments</h4>
+              <p>Tests must pass on different SAP clients (800, 900) across several sandbox systems simultaneously.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Test Cases Come from OPSH Tickets</h4>
+              <p>Each <strong>OPTA-XX</strong> automation ticket is linked to an <strong>OPSH-XXXX</strong> TEST-type ticket in Jira. The OPSH ticket holds the Zephyr test steps (Action + Expected Result) that define exactly what to automate.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ SLIDE: Playwright Intro ══ -->
+  <div class="slide bg-dark2" id="s_pw">
+    <div class="full-width">
+      <div class="slide-label">Our Automation Tool</div>
+      <h2>Introducing Playwright</h2>
+      <div class="two-col">
+        <div>
+          <p style="margin-bottom:16px;"><strong>Playwright</strong> is an open-source browser automation framework developed by <strong>Microsoft</strong>. It allows us to write code that controls a real browser — clicking buttons, filling forms, and verifying results — exactly as a human tester would, but automatically and at speed.</p>
+          <p style="margin-bottom:18px;">We write our test scripts in <strong>TypeScript</strong> (a typed version of JavaScript), which gives us better code quality, autocomplete, and error checking in VS Code.</p>
+          <div class="card gold-top">
+            <h3>Why Playwright for SAP WebGUI?</h3>
+            <ul>
+              <li>Supports <strong>XPath selectors</strong> — essential for navigating SAP’s complex HTML structure</li>
+              <li>Built-in <strong>auto-wait</strong> — handles SAP’s slow load times without brittle sleep calls</li>
+              <li>Runs a <strong>real Chromium browser</strong>, so what it sees matches what a tester sees</li>
+              <li>Native <strong>VS Code Test Explorer</strong> integration for running and debugging tests</li>
+              <li>Produces detailed <strong>screenshots and traces</strong> on failure for easy debugging</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="two-col" style="gap:14px; margin-bottom:14px;">
+            <div class="stat-box">
+              <div style="font-size:1.8rem;">🌐</div>
+              <div class="stat-label" style="margin-top:6px;">Cross-browser<br/>Chromium, Firefox, WebKit</div>
+            </div>
+            <div class="stat-box">
+              <div style="font-size:1.8rem;">⚡</div>
+              <div class="stat-label" style="margin-top:6px;">Auto-wait<br/>No manual sleep timers</div>
+            </div>
+            <div class="stat-box">
+              <div style="font-size:1.8rem;">📸</div>
+              <div class="stat-label" style="margin-top:6px;">Screenshots<br/>Captured on every step</div>
+            </div>
+            <div class="stat-box">
+              <div style="font-size:1.8rem;">🔍</div>
+              <div class="stat-label" style="margin-top:6px;">Trace Viewer<br/>Replay any test run</div>
+            </div>
+          </div>
+          <div class="card accent-top">
+            <h3>How It Fits Our Stack</h3>
+            <div class="flow" style="margin:10px 0; flex-wrap:wrap; gap:8px;">
+              <div class="flow-box" style="min-width:80px; font-size:.8rem;">TypeScript<br/>Test Code</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-box" style="min-width:80px; font-size:.8rem;">Playwright<br/>Runner</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-box" style="min-width:80px; font-size:.8rem;">Chromium<br/>Browser</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-box" style="min-width:80px; font-size:.8rem; border-color:var(--brand-gold); color:var(--brand-gold);">SAP<br/>WebGUI</div>
+            </div>
+            <p style="font-size:.85rem;">Playwright drives Chromium, which loads SAP WebGUI in the browser — our TypeScript code then interacts with the live SAP WebGUI just like a tester would.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════════════════ SLIDE 3 ══ -->
+  <div class="slide bg-mid" id="s3">
+    <div class="full-width">
+      <div class="slide-label">Phase 1 · Before AI</div>
+      <h2>The Manual Approach</h2>
+      <p style="margin-bottom:24px;">Before AI tooling was introduced, every test file was built by hand — a slow, technical, and error-prone process.</p>
+      <div class="three-col">
+        <div class="card red-top">
+          <h3>① Open Inspect Element</h3>
+          <p>Open the browser's developer tools on the SAP WebGUI screen, then right-click on any element to inspect the HTML structure.</p>
+        </div>
+        <div class="card red-top">
+          <h3>② Hunt for the Right XPath</h3>
+          <p>The SAP DOM is deeply nested with generated IDs. The automation team had to trace up the DOM tree to build a reliable XPath that would still work after refreshes.</p>
+        </div>
+        <div class="card red-top">
+          <h3>③ Write the Spec File Manually</h3>
+          <p>Copy the XPath into a <code style="color:var(--brand-light)">.spec.ts</code> file, write each test step by hand, then run and debug until the test passes.</p>
+        </div>
+      </div>
+      <div class="card" style="margin-top: 22px; border-left: 3px solid var(--brand-red);">
+        <p><strong>The bottleneck:</strong> A single test scenario with 8–10 steps could take <span class="highlight">half a day or more</span> to automate — most of that time spent debugging broken locators rather than writing test logic.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 4 ══ -->
+  <div class="slide bg-dark" id="s4">
+    <div class="full-width">
+      <div class="slide-label">Phase 1 · Finding Locators in SAP WebGUI</div>
+      <h2>Inspecting SAP WebGUI Elements</h2>
+      <div class="two-col">
+        <div>
+          <p style="margin-bottom:14px;">SAP WebGUI renders its UI as an HTML tree where most interactive elements are wrapped inside <strong>multiple layers</strong> of tables, rows, and spans.</p>
+          <div class="step-list">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h4>Right-click → Inspect</h4>
+                <p>Navigate to the SAP screen, right-click the target button or field, and open Chrome DevTools.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h4>Read the DOM Tree</h4>
+                <p>Look for a visible text label (like <code style="color:var(--brand-light)">&lt;span&gt;Employee No.&lt;/span&gt;</code>) — SAP text spans are the most stable reference point.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h4>Build the XPath</h4>
+                <p>Walk ancestor nodes to find a clickable element — e.g., <code style="color:var(--brand-light)">ancestor::tr[2]/td[2]</code> to get the expand arrow next to a label.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content">
+                <h4>Validate in Console</h4>
+                <p>Type <code style="color:var(--brand-light)">$x("//span[text()='Employee No.']")</code> in the browser console to confirm the locator resolves to the right element.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="code-block">
+<span class="cm">// Examples of hand-crafted XPath locators</span>
+<span class="cm">// used in the OPTA test suite:</span>
+
+<span class="cm">// Expand/collapse a tree node by label</span>
+<span class="kw">page</span>.<span class="fn">locator</span>(
+  <span class="str">`//span[text()='${name}']</span>
+<span class="str">   /ancestor::tr[2]/td[2]`</span>
+);
+
+<span class="cm">// Click a text button (first occurrence)</span>
+<span class="kw">page</span>.<span class="fn">locator</span>(
+  <span class="str">`(//*[contains(text(),'${option}')])[1]`</span>
+);
+
+<span class="cm">// Target an SAP toolbar button by index</span>
+<span class="kw">page</span>.<span class="fn">locator</span>(
+  <span class="str">`(//div[@role="toolbar"])[2]/span[${n}]`</span>
+);
+
+<span class="cm">// Drill down a nested report tree</span>
+<span class="kw">page</span>.<span class="fn">locator</span>(
+  <span class="str">`//span[normalize-space(text())='${name}']</span>
+<span class="str">   /ancestor::tr[2]/td[2]`</span>
+);
+          </div>
+          <p style="margin-top:12px; font-size:.85rem;">These patterns were discovered through trial and error — and then consolidated into <strong>reusable page object methods</strong> to avoid rewriting them every time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 5 ══ -->
+  <div class="slide bg-dark2" id="s5">
+    <div class="full-width">
+      <div class="slide-label">Phase 1 · Debugging</div>
+      <h2>The Debugging Cycle</h2>
+      <p style="margin-bottom: 20px;">Even after writing the test, getting it to <em>actually run reliably</em> against SAP's dynamic UI required a lengthy debugging process.</p>
+      <div class="two-col">
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num" style="background:var(--brand-red);">✗</div>
+            <div class="step-content">
+              <h4>Run the test → it fails</h4>
+              <p>SAP loads slowly; elements sometimes don't exist yet when Playwright tries to click them.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="background:#7d3c98;">⏱</div>
+            <div class="step-content">
+              <h4>Add waits and retries</h4>
+              <p>Insert <code style="color:var(--brand-light)">waitForTimeout</code> calls between steps and increase <code style="color:var(--brand-light)">actionTimeout</code> to tolerate SAP's response time.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="background:#d35400;">🔁</div>
+            <div class="step-content">
+              <h4>XPath resolves multiple elements</h4>
+              <p>SAP renders similar labels in multiple places — the locator must be made more specific, often using positional indices like <code style="color:var(--brand-light)">[1]</code> or <code style="color:var(--brand-light)">[2]</code>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="background:var(--brand-green);">✓</div>
+            <div class="step-content">
+              <h4>Stable, passing test</h4>
+              <p>After multiple iterations the test runs consistently — but the effort was disproportionate to the actual business logic being validated.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card gold-top">
+            <h3>Key Challenges Faced</h3>
+            <ul>
+              <li>SAP reuses the same HTML structure for different controls — generic locators break easily</li>
+              <li>Dynamic element IDs generated by SAP change between sessions</li>
+              <li>Drag-and-drop actions in SAP tree views require precise coordinate calculations</li>
+              <li>Modal dialogs and popups appear unpredictably, blocking the automation flow</li>
+              <li>Every new test scenario meant starting the locator-hunting process from scratch</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 6 ══ -->
+  <div class="slide bg-accent" id="s6">
+    <div class="full-width center">
+      <div class="slide-label">The Turning Point</div>
+      <h1 style="font-size:clamp(1.8rem,3.5vw,3rem);">Introducing the<br /><span class="highlight">AI-Powered Spec Generator</span></h1>
+      <div class="divider" style="margin: 20px auto;"></div>
+      <p style="max-width:680px; margin: 0 auto 28px; font-size:1.1rem;">Instead of writing test files from scratch, a <strong>GitHub Copilot agent skill</strong> was built that reads test steps directly from <strong>Zephyr Squad</strong> and generates a ready-to-run Playwright spec file.</p>
+      <div class="flow">
+        <div class="flow-box">📋<br/>Zephyr<br/>Test Steps</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">🔗<br/>Jira<br/>Issue Link</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">🤖<br/>AI Agent<br/>Skill</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">⚙️<br/>Pattern<br/>Matching</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="border-color:var(--brand-gold); color:var(--brand-gold);">✅<br/>.spec.ts<br/>Generated</div>
+      </div>
+      <p style="font-size:.9rem; color:var(--text-muted); max-width:620px; margin:0 auto;">The result: what used to take hours of manual work now takes <span class="highlight">minutes to scaffold</span> — letting the automation team focus on refining test logic rather than fighting with locators.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 7 ══ -->
+  <div class="slide bg-dark" id="s7">
+    <div class="full-width">
+      <div class="slide-label">Phase 2 · AI Spec Generator</div>
+      <h2>How the GitHub Copilot Skill Generates the Spec</h2>
+      <div class="two-col">
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Trigger the Spec Generator</h4>
+              <p>The primary way is via the terminal command <code style="color:var(--brand-light)">npm run generate:spec -- OPTA-91</code> — this is preferred as it avoids consuming GitHub Copilot tokens. Alternatively, the registered <strong>GitHub Copilot agent skill</strong> can be invoked by typing <em>"generate spec for OPTA-91"</em> in the Copilot Chat panel, but this uses more AI token budget and is better suited for one-off or exploratory requests.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Script resolves the linked Zephyr test</h4>
+              <p>The generator queries Jira to find the linked <strong>OPSH-XXXX</strong> test ticket, then calls the Zephyr API to fetch every step (Action, Test Data, Expected Result).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>AI pattern matching converts steps to code</h4>
+              <p>Each plain-English step is matched against a library of known SAP patterns — navigation, dropdowns, tree drilling, drag-and-drop — and mapped to existing <strong>page object methods</strong>.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Spec file is written to disk</h4>
+              <p>A <code style="color:var(--brand-light)">tests/[NN]-OPTA-91.spec.ts</code> file is created. Every <code style="color:var(--brand-light)">test.step()</code> block carries a <code style="color:var(--brand-light)">[Zephyr Step N]</code> comment. Steps the AI could not map get a <code style="color:var(--brand-light)">/* TODO */</code> placeholder.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Fix TODOs &amp; errors using &ldquo;Record at cursor&rdquo;</h4>
+              <p>If a generated method call fails at runtime or a <code style="color:var(--brand-light)">/* TODO */</code> needs a real locator, place the cursor at that line in VS Code and use <strong>Playwright → Record at cursor</strong> — the browser opens, you interact with SAP, and the exact locator is recorded and inserted automatically.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="code-block">
+<span class="cm">// generate-spec.ts – simplified flow</span>
+
+<span class="kw">const</span> steps = <span class="kw">await</span> <span class="fn">fetchZephyrSteps</span>(<span class="str">'OPSH-123'</span>);
+
+<span class="kw">for</span> (<span class="kw">const</span> step <span class="kw">of</span> steps) {
+
+  <span class="cm">// Match navigation steps</span>
+  <span class="kw">const</span> tcode = <span class="fn">detectTCode</span>(step.action);
+  <span class="cm">// → tcodePage.accessEasyReporter()</span>
+
+  <span class="cm">// Match known OPTA product names</span>
+  <span class="kw">const</span> product = <span class="fn">detectProduct</span>(step.action);
+  <span class="cm">// → "Go to Easy Reporter" → accessEasyReporter()</span>
+
+  <span class="cm">// Match dropdown / button / drag patterns</span>
+  <span class="kw">const</span> action = <span class="fn">detectGenericAction</span>(step.action);
+  <span class="cm">// → unrecognised step → /* TODO */</span>
+}
+
+<span class="fn">writeSpecFile</span>(outputPath, specContent);
+          </div>
+          <div class="card" style="margin-top:14px; border-left:3px solid var(--brand-gold);">
+            <h3 style="margin-bottom:8px;">When the AI can’t map a step</h3>
+            <ul style="gap:6px;">
+              <li>A <code style="color:var(--brand-light)">/* TODO */</code> comment is left as a placeholder</li>
+              <li>Use <strong>Record at cursor</strong> in VS Code to capture the real interaction</li>
+              <li>Same approach for any method call that throws an error at runtime</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE: Demo Gen ══ -->
+  <div class="slide bg-dark2" id="s_demo_gen">
+    <div class="full-width center">
+      <div class="slide-label">Live Demo · Spec Generation</div>
+      <h2 style="margin-bottom:18px;">Watch: Generating a Test Spec from Zephyr Steps</h2>
+      <p style="margin-bottom:20px; max-width:720px; margin-left:auto; margin-right:auto;">
+        This recording shows the full spec generation flow — running
+        <code style="color:var(--brand-light);">npm run generate:spec -- OPTA-XX</code>,
+        watching the tool fetch Zephyr steps, and seeing the
+        <code style="color:var(--brand-light);">.spec.ts</code> file scaffold automatically in VS Code.
+      </p>
+      <div style="width:100%; max-width:900px; margin:0 auto; border-radius:14px; overflow:hidden; border:2px solid var(--card-border); box-shadow:0 8px 32px rgba(0,0,0,.5);">
+        <iframe
+          src="https://drive.google.com/file/d/1wD4TEe2AVdtYvvHhRf-a1tAK5AjEdtWC/preview"
+          width="100%"
+          height="480"
+          allow="autoplay"
+          style="display:block; border:none;">
+        </iframe>
+      </div>
+      <p style="margin-top:14px; font-size:.82rem; color:var(--text-muted);">
+        Use the player controls to pause, rewind, or go fullscreen. No sign-in required.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE: Record at Cursor ══ -->
+  <div class="slide bg-dark2" id="s_rec">
+    <div class="full-width">
+      <div class="slide-label">Fixing Gaps · Playwright Record at Cursor</div>
+      <h2>When the Generator Leaves a TODO or an Error Occurs</h2>
+      <p style="margin-bottom:20px;">Not every Zephyr step can be mapped automatically. When the generated code has a <code style="color:var(--brand-light)">/* TODO */</code> or a method call fails at runtime, we use Playwright’s built-in <strong>Record at cursor</strong> feature instead of hunting for XPath manually.</p>
+      <div class="two-col">
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Identify the gap</h4>
+              <p>Either a <code style="color:var(--brand-light)">/* TODO */</code> placeholder in the generated file, or a test step that fails with a locator error when run in the Test Explorer.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Place the cursor at that line</h4>
+              <p>In VS Code, click inside the spec file at the exact line where the TODO or failed action is. This tells Playwright where to insert the recorded code.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Invoke &ldquo;Record at cursor&rdquo;</h4>
+              <p>Open the <strong>Test Explorer</strong> panel, find the test, and click the <strong>Record at cursor</strong> button (or use the command palette: <em>Playwright: Record at cursor</em>). A Chromium browser window launches with SAP already loaded.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Interact with SAP manually</h4>
+              <p>Perform the action in the browser — click a button, fill a field, select a dropdown. Playwright captures every interaction and generates the corresponding locator and action code automatically.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Code is inserted at the cursor</h4>
+              <p>Stop recording. The generated code (with stable, SAP-aware locators) is inserted directly into the spec file at the cursor position, replacing or filling in the TODO. No manual XPath writing needed.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card gold-top" style="margin-bottom:14px;">
+            <h3>Before &amp; After</h3>
+            <p style="margin-bottom:10px; font-size:.85rem;">Generated file with TODO:</p>
+            <div class="code-block" style="margin-bottom:10px;">
+<span class="kw">await</span> test.<span class="fn">step</span>(<span class="str">'[Zephyr Step 10] Select Report Type'</span>, <span class="kw">async</span> () =&gt; {
+  <span class="cm">/* TODO: implement — select PD Structural Report */</span>
+  <span class="kw">await</span> page.<span class="fn">waitForTimeout</span>(<span class="num">1000</span>);
+});
+            </div>
+            <p style="margin-bottom:10px; font-size:.85rem;">After using Record at cursor:</p>
+            <div class="code-block">
+<span class="kw">await</span> test.<span class="fn">step</span>(<span class="str">'[Zephyr Step 10] Select Report Type'</span>, <span class="kw">async</span> () =&gt; {
+  <span class="kw">await</span> page.<span class="fn">getByRole</span>(<span class="str">'radio'</span>, {
+    name: <span class="str">'PD Structural Report or Non-'</span>
+  }).<span class="fn">click</span>();
+  <span class="kw">await</span> page.<span class="fn">waitForTimeout</span>(<span class="num">1000</span>);
+});
+            </div>
+          </div>
+          <div class="card green-top">
+            <h3 style="font-size:.95rem; margin-bottom:6px;">Why This Matters</h3>
+            <ul style="gap:6px;">
+              <li style="font-size:.82rem;">No manual DOM inspection or XPath writing</li>
+              <li style="font-size:.82rem;">Locators are generated from real interactions with the live SAP WebGUI</li>
+              <li style="font-size:.82rem;">Works for any action the AI couldn’t predict: file uploads, complex dialogs, custom controls</li>
+              <li style="font-size:.82rem;">Keeps the automation team productive without deep Playwright expertise</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 8 ══ -->
+  <div class="slide bg-mid" id="s8">
+    <div class="full-width">
+      <div class="slide-label">Integrations · Zephyr Squad</div>
+      <h2>Zephyr Integration — Closing the Loop</h2>
+      <p style="margin-bottom:22px;">Zephyr Squad is the source of truth for <strong>what to test</strong>. Our tooling connects it to <strong>how we test</strong> (Playwright) and <strong>what happened</strong> (Jira comments + Allure reports).</p>
+      <div class="three-col">
+        <div class="card accent-top">
+          <h3>📥 Input: Test Design</h3>
+          <ul>
+            <li>Testers write test steps in Zephyr (Action + Expected Result)</li>
+            <li>Each test is linked to its parent OPTA Jira ticket</li>
+            <li>Steps describe business behaviour — not code</li>
+          </ul>
+        </div>
+        <div class="card gold-top">
+          <h3>⚙️ Bridge: Spec Generator</h3>
+          <ul>
+            <li>Fetches Zephyr steps via REST API</li>
+            <li>Converts plain-English steps into Playwright TypeScript code</li>
+            <li>Comments in generated code reference Zephyr step numbers for traceability</li>
+          </ul>
+        </div>
+        <div class="card green-top">
+          <h3>📤 Output: Execution Result</h3>
+          <ul>
+            <li>Test results (PASS / FAIL) are posted back to Jira as a comment</li>
+            <li>Allure report provides screenshots, timelines, and step details</li>
+            <li>Jira status updates are posted automatically after each run; CI/CD pipeline automation is currently being researched by the web dev team</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flow" style="margin-top:22px;">
+        <div class="flow-box">Zephyr<br/>Steps</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">generate-spec<br/>.ts</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Playwright<br/>Test Run</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Allure<br/>Report</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="border-color:var(--brand-green); color:#58d68d;">Jira<br/>Comment</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ SLIDE 9 ══ -->
+  <div class="slide bg-dark" id="s9">
+    <div class="full-width">
+      <div class="slide-label">Deep Dive · Real Example</div>
+      <h2>OPTA-91: From Zephyr to Running Test</h2>
+      <p style="margin-bottom:18px;"><strong>Scenario:</strong> <em>Easy Reporter — Calculation Fields Dropdown Validation</em> — verifying that different calculation timing options can be assigned to calculation fields in a report.</p>
+      <div class="two-col">
+        <div>
+          <div class="card accent-top" style="margin-bottom:14px;">
+            <h3>What the Zephyr Steps Say (plain English)</h3>
+            <ol>
+              <li>Log on to SAP. Navigate to Easy Reporter using transaction code <code style="color:var(--brand-light)">/n/spin/er</code></li>
+              <li>Click "Create a new Report"</li>
+              <li>Go to Tab 2 (Report Columns) and add: Employee No., Calculation Fields 001–005, Date of Birth, Age</li>
+              <li>For each Calculation Field, expand its Field Settings and set the Calculation Timing dropdown to a specific value</li>
+              <li>Verify the expected result in the dropdown after each selection</li>
+            </ol>
+          </div>
+          <div class="card gold-top">
+            <h3>What the Generator Produces</h3>
+            <p>A <code style="color:var(--brand-light)">test.step()</code> block for each Zephyr step, with:</p>
+            <ul>
+              <li>A call to <code style="color:var(--brand-light)">tcodePage.accessEasyReporter()</code> for navigation</li>
+              <li>Role-based locators for standard buttons (<code style="color:var(--brand-light)">getByRole</code>)</li>
+              <li>XPath patterns for tree nodes and dropdown fields</li>
+              <li>Comments referencing <code style="color:var(--brand-light)">[Zephyr Step N]</code> for traceability</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="code-block" style="overflow-y:auto; max-height:420px;">
+<span class="kw">test</span>(<span class="str">'OPTA-91: ER - Calculation Fields Dropdown'</span>,
+<span class="kw">async</span> ({ tcodePage, basePage, editReport, page }) =&gt; {
+
+  <span class="kw">await</span> test.<span class="fn">step</span>(<span class="str">'[Zephyr Step 2] Navigate to Easy Reporter'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">await</span> tcodePage.<span class="fn">accessEasyReporter</span>();
+    <span class="kw">await</span> page.<span class="fn">waitForTimeout</span>(<span class="num">1500</span>);
+  });
+
+  <span class="kw">await</span> test.<span class="fn">step</span>(<span class="str">'[Zephyr Step 3] Create a new Report'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">await</span> page.<span class="fn">getByRole</span>(<span class="str">'button'</span>, {
+      name: <span class="str">'Create a new Report'</span>
+    }).<span class="fn">click</span>();
+    <span class="kw">await</span> <span class="fn">expect</span>(page).<span class="fn">toHaveTitle</span>(<span class="str">/Create a new Report/</span>);
+  });
+
+  <span class="kw">await</span> test.<span class="fn">step</span>(<span class="str">'[Zephyr Step 4] Add data fields'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">await</span> editReport.<span class="fn">reportColumns</span>();
+    <span class="kw">await</span> basePage.<span class="fn">drillDownReport</span>([
+      <span class="str">'Master Data'</span>, <span class="str">'Employee Data'</span>
+    ]);
+    <span class="kw">await</span> editReport.<span class="fn">multiSelectAndDrag</span>(
+      [<span class="str">'Employee No.'</span>],
+      <span class="str">"//span[text()='Additional Report Columns']"</span>
+    );
+  });
+
+  <span class="kw">await</span> test.<span class="fn">step</span>(<span class="str">'[Zephyr Step 5] Set calculation timing'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">await</span> basePage.<span class="fn">expandNode</span>(<span class="str">'Calculation Field 005'</span>).<span class="fn">click</span>();
+    <span class="kw">await</span> basePage.<span class="fn">dropDown</span>(
+      <span class="str">'(02) Default (Calc before Filters)'</span>,
+      <span class="num">2</span>, <span class="num">2</span>
+    );
+  });
+
+});
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 10 ══ -->
+  <div class="slide bg-dark2" id="s10">
+    <div class="full-width" style="padding-bottom:72px;">
+      <div class="slide-label">Architecture · Page Object Model</div>
+      <h2>Reusable Building Blocks</h2>
+      <p style="margin-bottom:20px;">The framework uses the <strong>Page Object Model (POM)</strong> pattern — all interaction logic is abstracted into reusable classes, so test files stay readable and changes in the UI only need fixing in one place.</p>
+      <div class="three-col">
+        <div class="card accent-top">
+          <h3>BasePage</h3>
+          <ul>
+            <li><code style="color:var(--brand-light)">drillDownReport()</code> — navigate tree menus with auto-scroll</li>
+            <li><code style="color:var(--brand-light)">expandNode()</code> — expand/collapse SAP tree nodes</li>
+            <li><code style="color:var(--brand-light)">dropDown()</code> — select from SAP dropdown fields</li>
+            <li><code style="color:var(--brand-light)">selectTextButton()</code> — click any element by its label</li>
+          </ul>
+        </div>
+        <div class="card gold-top">
+          <h3>TcodePage</h3>
+          <ul>
+            <li><code style="color:var(--brand-light)">accessEasyReporter()</code></li>
+            <li><code style="color:var(--brand-light)">accessEasyClone()</code></li>
+            <li><code style="color:var(--brand-light)">accessEasyGoLive()</code></li>
+            <li>…one method per OPTA product — all use SAP's command field (<code style="color:var(--brand-light)">#ToolbarOkCode</code>)</li>
+          </ul>
+        </div>
+        <div class="card green-top">
+          <h3>Product Pages</h3>
+          <ul>
+            <li><strong>EditReportPage</strong> — report column management, multi-drag</li>
+            <li><strong>ERPage</strong> — Easy Reporter-specific actions</li>
+            <li><strong>ECPage</strong> — Easy Clone flows</li>
+            <li><strong>AuthPage</strong> — SAP login, session management</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px; border-left: 3px solid var(--brand-accent);">
+        <p><strong>The question is: how easy is it to update when something changes?</strong> When a UI change happens in SAP (e.g., a label changes or a button moves), we only update <strong>one method in one file</strong> — not every test that uses that element. This is what makes <span class="highlight">Web GUI solutions significantly easier to maintain</span> than deep backend tests.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 11 ══ -->
+  <div class="slide bg-mid" id="s11">
+    <div class="full-width">
+      <div class="slide-label">Step by Step · OPTA-91 Full Walkthrough</div>
+      <h2>How One Scenario Gets Fully Automated</h2>
+      <div class="two-col">
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Pick the Jira ticket</h4>
+              <p>The team identifies OPTA-91 as a scenario to automate. The ticket is linked to a Zephyr test (OPSH-XXXX) with written test steps.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Run the spec generator</h4>
+              <p><code style="color:var(--brand-light)">npm run generate:spec -- OPTA-91</code> — the tool calls the Zephyr API, reads each step, and scaffolds a <code style="color:var(--brand-light)">[11]-OPTA-91.spec.ts</code> file.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Review, fix TODOs &amp; record missing locators</h4>
+              <p>The automation team reviews the generated file. Any <code style="color:var(--brand-light)">/* TODO */</code> placeholders or failed method calls are resolved using <strong>Playwright → Record at cursor</strong> in VS Code — interact with SAP live and the locator is captured automatically.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Pull changes &amp; run via VS Code Test Explorer</h4>
+              <p>Pull the latest changes from Bitbucket, then use the <strong>Test Explorer</strong> panel in VS Code to select and run the scenario. Watch the browser execute the steps live and fix any issues.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Commit &amp; share via Bitbucket</h4>
+              <p>Commit the finalised spec file to Bitbucket. Other testers pull the changes and run the test through their own VS Code Test Explorer. Jira is automatically updated with test results. Automated pipeline execution is still being researched by the web dev team.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <h4>Generate the CR / Automation Documentation</h4>
+              <p>After the test passes, an <strong>Automation Specification Document (ASD)</strong> is generated — capturing the test scenario, methods used, page objects involved, Zephyr step mapping, and environment details. This CR doc is automatically published to <strong>Google Docs</strong> and linked back to the Jira ticket for full traceability.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card gold-top" style="margin-bottom:14px;">
+            <h3>Time Comparison</h3>
+            <table class="compare-table">
+              <tr><th>Task</th><th>Manual</th><th>With AI Generator</th></tr>
+              <tr><td>Scaffold spec file</td><td class="no">3–6 hrs</td><td class="yes">~5 min</td></tr>
+              <tr><td>Locator research</td><td class="no">2–4 hrs</td><td class="partial">~30 min review</td></tr>
+              <tr><td>Debug & stabilise</td><td class="no">2–3 hrs</td><td class="partial">~1 hr</td></tr>
+              <tr><td>Total per scenario</td><td class="no">1–2 days</td><td class="yes">2–3 hrs</td></tr>
+            </table>
+          </div>
+          <div class="card green-top">
+            <h3>What Still Needs Human Input</h3>
+            <ul>
+              <li>Reviewing generated code for correctness and business logic</li>
+              <li>Using <strong>Record at cursor</strong> to fill in TODOs and fix failed locators</li>
+              <li>Complex UI interactions that require manual verification (e.g., drag-and-drop coordinates)</li>
+              <li>Edge cases and assertions not captured in Zephyr steps</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE: Test Explorer ══ -->
+  <div class="slide bg-dark" id="s_te">
+    <div class="full-width">
+      <div class="slide-label">Execution · How to Run</div>
+      <h2>Running Tests via VS Code Test Explorer</h2>
+      <p style="margin-bottom:20px;">The <strong>Test Explorer</strong> panel in VS Code is the main interface testers use to view, run, and debug automation tests — no terminal commands required.</p>
+      <div class="two-col">
+        <div class="step-list">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Pull latest changes from Bitbucket</h4>
+              <p>Use VS Code's built-in Source Control or any Git client to pull the latest spec files committed by the automation team.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Open the Test Explorer panel</h4>
+              <p>Click the <strong>flask / beaker icon</strong> in the VS Code Activity Bar on the left side. This opens the Test Explorer panel showing all discovered Playwright tests.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Browse and select a test</h4>
+              <p>Tests are listed by file and scenario name (e.g., <strong>OPTA-91: ER - Calculation Fields Dropdown Validation</strong>). Expand to see individual test steps.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Click ▶ Run</h4>
+              <p>Press the run button next to the test. A real Chromium browser window launches and executes every step automatically — log into SAP, navigate, interact, verify.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>View results inside VS Code</h4>
+              <p>Passed steps show a <span style="color:#58d68d;">✔ green tick</span>, failed steps show a <span style="color:var(--brand-red);">✗ red cross</span> with the error message and a screenshot. Use the <strong>Debug</strong> button to step through a failing test interactively.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card gold-top" style="margin-bottom:14px;">
+            <h3>What You Can Do in Test Explorer</h3>
+            <ul>
+              <li><strong>Run all tests</strong> — execute the full regression suite at once</li>
+              <li><strong>Run a single test</strong> — target one scenario for quick validation</li>
+              <li><strong>Debug a test</strong> — pause execution at any step and inspect the browser state</li>
+              <li><strong>Filter by status</strong> — show only failed or passing tests</li>
+              <li><strong>Re-run failed tests</strong> — retry only the tests that previously failed</li>
+            </ul>
+          </div>
+          <div class="card green-top">
+            <h3>After the Run</h3>
+            <ul>
+              <li>Results appear inline in Test Explorer immediately</li>
+              <li>Screenshots are saved to the <code style="color:var(--brand-light);">test-results/</code> folder</li>
+              <li>Jira is automatically updated with the test status via the built-in reporter</li>
+              <li>Allure report can be generated locally for a detailed visual breakdown</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 12 ══ -->
+  <div class="slide bg-dark" id="s12">
+    <div class="full-width">
+      <div class="slide-label">Execution & Reporting</div>
+      <h2>Running Tests & Seeing Results</h2>
+      <div class="two-col">
+        <div>
+          <div class="card accent-top" style="margin-bottom:14px;">
+            <h3>▶ How Testers Run Tests Today</h3>
+            <p style="margin-bottom:10px;">No command line needed. The current process is:</p>
+            <ol>
+              <li>Pull the latest spec file changes from <strong>Bitbucket</strong></li>
+              <li>Open the project in <strong>VS Code</strong></li>
+              <li>Open the <strong>Test Explorer</strong> panel in the VS Code Activity Bar</li>
+              <li>Browse the test list and select the scenario to run</li>
+              <li>Click the ▶ Run button — the browser launches and executes steps live</li>
+              <li>View pass/fail results directly inside VS Code</li>
+            </ol>
+          </div>
+          <div class="card green-top">
+            <h3>📊 Allure Reports</h3>
+            <ul>
+              <li>Step-by-step timeline of every test execution</li>
+              <li>Screenshots captured after every action</li>
+              <li>Clear PASS / FAIL / RETRY breakdown</li>
+              <li>Generated locally and shared with the team</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="card gold-top" style="margin-bottom:14px;">
+            <h3>💬 Jira Reporting — Now Working</h3>
+            <p style="margin-bottom:8px;">The custom <code style="color:var(--brand-light)">JiraReporter</code> is now active. After each test run it:</p>
+            <ul>
+              <li>Reads the OPTA-XX key from the test file name automatically</li>
+              <li>Posts a structured comment to the Jira issue: test name, status (PASSED / FAILED), and product version tested</li>
+              <li>Keeps Jira tickets up-to-date without any manual effort</li>
+            </ul>
+            <p style="margin-top:10px; color:#58d68d; font-size:.85rem;">✅ Jira status updates are live — only automated pipeline execution is still being researched</p>
+          </div>
+          <div class="card" style="border-left:3px solid var(--brand-accent);">
+            <h3>🔬 CI/CD Pipeline — Under Research</h3>
+            <p style="margin-bottom:10px; font-size:.88rem;">The web dev team is researching automated pipeline execution. Planned capabilities include:</p>
+            <ul>
+              <li>Trigger test runs on every Bitbucket push</li>
+              <li>Auto-generate Allure reports as pipeline artifacts</li>
+              <li>Post test results and comments back to Jira automatically</li>
+            </ul>
+            <p style="margin-top:10px; color:var(--brand-gold); font-size:.82rem;">⚠️ Not yet implemented — currently in active research</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE: Demo ══ -->
+  <div class="slide bg-dark2" id="s_demo">
+    <div class="full-width center">
+      <div class="slide-label">Live Demo · Test Execution</div>
+      <h2 style="margin-bottom:18px;">Watch: Running an Automated Test Case</h2>
+      <p style="margin-bottom:20px; max-width:720px; margin-left:auto; margin-right:auto;">
+        The following recording shows a complete test run — from launching VS Code Test Explorer,
+        through live browser execution against SAP WebGUI, to the final PASS result and Jira update.
+      </p>
+      <div style="width:100%; max-width:900px; margin:0 auto; border-radius:14px; overflow:hidden; border:2px solid var(--card-border); box-shadow:0 8px 32px rgba(0,0,0,.5);">
+        <iframe
+          src="https://drive.google.com/file/d/1Gczy7Kdue8stIHzawKOciNTtmNNK2yaS/preview"
+          width="100%"
+          height="480"
+          allow="autoplay"
+          style="display:block; border:none;">
+        </iframe>
+      </div>
+      <p style="margin-top:14px; font-size:.82rem; color:var(--text-muted);">
+        Use the player controls to pause, rewind, or go fullscreen. No sign-in required.
+      </p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE: Demo Doc ══ -->
+  <div class="slide bg-dark2" id="s_demo_doc">
+    <div class="full-width center" style="padding-bottom:64px;">
+      <div class="slide-label">Live Demo · Automation Documentation</div>
+      <h2 style="margin-bottom:18px;">Watch: Generating the CR / Automation Specification Document</h2>
+      <p style="margin-bottom:20px; max-width:720px; margin-left:auto; margin-right:auto;">
+        After a test case is automated and passes, a <strong>CR documentation report</strong> is generated automatically —
+        covering the test scenario, automation methods used, page objects, Zephyr step mapping, and environment details.
+        The document is published directly to <strong>Google Docs</strong> and linked to the Jira ticket.
+      </p>
+      <div style="width:100%; max-width:900px; margin:0 auto; border-radius:14px; overflow:hidden; border:2px solid var(--card-border); box-shadow:0 8px 32px rgba(0,0,0,.5);">
+        <iframe
+          src="https://drive.google.com/file/d/1_-BUOohGZLN0xrexxAnGKvH1eVX4c4aB/preview"
+          width="100%"
+          height="400"
+          allow="autoplay"
+          style="display:block; border:none;">
+        </iframe>
+      </div>
+      <p style="margin-top:12px; font-size:.82rem; color:var(--text-muted);">
+        Use the player controls to pause, rewind, or go fullscreen. No sign-in required.
+      </p>
+      <div style="margin-top:16px; display:flex; align-items:center; justify-content:center; gap:14px; background:rgba(244,208,63,.08); border:1px solid var(--brand-gold); border-radius:12px; padding:12px 24px; max-width:620px; margin-left:auto; margin-right:auto;">
+        <span style="font-size:1.3rem;">📄</span>
+        <div style="text-align:left;">
+          <div style="font-size:.78rem; color:var(--brand-gold); font-weight:700; text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px;">Sample Generated Document</div>
+          <a href="https://docs.google.com/document/d/1PtVfrqIYV6zlU-ZH2Wd_9J6TfRsj6ArIj3jOZiINi7I/edit" target="_blank"
+            style="display:inline-flex; align-items:center; gap:6px; color:var(--text-main); font-size:.95rem; font-weight:700; text-decoration:none;"
+            onmouseover="this.style.color='var(--brand-light)'" onmouseout="this.style.color='var(--text-main)'">
+            View the Automation Specification Document (ASD) ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 13 ══ -->
+  <div class="slide bg-dark2" id="s13">
+    <div class="full-width">
+      <div class="slide-label">The Question · Prioritisation</div>
+      <h2>Web GUI vs. Core Backend — Ease of Automation</h2>
+      <p style="margin-bottom:20px;">Not everything can be automated in 3 months. Here's how we think about where to invest automation effort first.</p>
+      <table class="compare-table full-width" style="margin-bottom:20px;">
+        <tr>
+          <th>Dimension</th>
+          <th>Web GUI Solutions<br/>(Easy Reporter, Clone, etc.)</th>
+          <th>Core Backend<br/>(RFC, SAP standard config)</th>
+        </tr>
+        <tr>
+          <td><strong>UI accessibility</strong></td>
+          <td class="yes">Browser-accessible — Playwright works natively</td>
+          <td class="no">No browser UI — requires API / RFC calls or SAP GUI scripting</td>
+        </tr>
+        <tr>
+          <td><strong>Locator stability</strong></td>
+          <td class="partial">SAP-rendered HTML — complex but consistent patterns exist</td>
+          <td class="no">No HTML — different tooling required entirely</td>
+        </tr>
+        <tr>
+          <td><strong>Update cost</strong></td>
+          <td class="yes">Page Object pattern means one-place updates</td>
+          <td class="no">Any change may require rewriting integration layer</td>
+        </tr>
+        <tr>
+          <td><strong>Existing tooling fit</strong></td>
+          <td class="yes">Playwright + Spec Generator already working</td>
+          <td class="no">New toolchain needed (SAP API mocking, RFC stubs)</td>
+        </tr>
+        <tr>
+          <td><strong>Zephyr traceability</strong></td>
+          <td class="yes">Full — step-by-step mapping already in place</td>
+          <td class="partial">Partial — steps exist but linking to automation is manual</td>
+        </tr>
+        <tr>
+          <td><strong>Time to first passing test</strong></td>
+          <td class="yes">Hours (with generator)</td>
+          <td class="no">Days–Weeks</td>
+        </tr>
+      </table>
+      <div class="card" style="border-left:3px solid var(--brand-gold);">
+        <p><strong>Recommendation:</strong> Prioritise Web GUI automation first — the toolchain is already proven, the ROI per scenario is highest, and failures are visible and reproducible. Core backend scenarios should be tackled where they can be validated <em>through</em> the Web GUI (e.g., verify a backend calculation by reading its result in Easy Reporter).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 14 ══ -->
+  <div class="slide bg-mid" id="s14">
+    <div class="full-width">
+      <div class="slide-label">The Question · What to Automate First</div>
+      <h2>Prioritisation Strategy</h2>
+      <div class="two-col">
+        <div>
+          <div class="card green-top" style="margin-bottom:14px;">
+            <h3>✅ Automate First (High Priority)</h3>
+            <ul>
+              <li><strong>Regression-critical scenarios</strong> — scenarios that break most often after a release</li>
+              <li><strong>High-frequency manual test cases</strong> — tests run every sprint</li>
+              <li><strong>Well-documented Zephyr steps</strong> — generator can scaffold these almost fully</li>
+              <li><strong>Cross-environment checks</strong> — same test runs on MT5, MT6, MT8 without code changes</li>
+            </ul>
+          </div>
+          <div class="card gold-top">
+            <h3>⚠️ Automate Later (Medium Priority)</h3>
+            <ul>
+              <li>Scenarios with frequent UI changes — maintenance cost is higher</li>
+              <li>Complex multi-system flows requiring external data setup</li>
+              <li>Exploratory / edge-case tests — better done manually by experienced testers</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="card red-top" style="margin-bottom:14px;">
+            <h3>❌ Don't Automate (Low ROI)</h3>
+            <ul>
+              <li>One-off sanity checks</li>
+              <li>Scenarios that require human judgement on visual layout</li>
+              <li>Tests for deprecated features being removed soon</li>
+            </ul>
+          </div>
+          <div class="card accent-top">
+            <h3>3-Month Realistic Target</h3>
+            <div class="stat-grid" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+              <div class="stat-box">
+                <div class="stat-num">15–20</div>
+                <div class="stat-label">scenarios fully automated</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-num">5–6</div>
+                <div class="stat-label">OPTA products covered</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-num">100%</div>
+                <div class="stat-label">Zephyr traceability</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-num">🔬</div>
+                <div class="stat-label">CI/CD pipeline in research</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 15 ══ -->
+  <div class="slide bg-dark" id="s15">
+    <div class="full-width">
+      <div class="slide-label">Before vs After</div>
+      <h2>The Full Picture</h2>
+      <div class="two-col" style="margin-bottom:20px;">
+        <div class="card red-top">
+          <h3>Before — Manual Era</h3>
+          <ul>
+            <li>Locate every element manually via browser DevTools</li>
+            <li>Write XPath by hand, validate in console</li>
+            <li>Code the spec file from a blank page</li>
+            <li>Debug timing issues and locator conflicts</li>
+            <li>1–2 days per scenario</li>
+            <li>Hard to maintain when SAP WebGUI changes</li>
+            <li>No automatic link back to Jira or Zephyr</li>
+          </ul>
+        </div>
+        <div class="card green-top">
+          <h3>After — AI + Toolchain</h3>
+          <ul>
+            <li>Spec file scaffolded from Zephyr steps in minutes</li>
+            <li>Known SAP patterns auto-mapped to page object methods</li>
+            <li>Automation team reviews, fills TODOs, and runs via VS Code Test Explorer</li>
+            <li>Debugging effort reduced significantly</li>
+            <li>2–3 hours per scenario end-to-end</li>
+            <li>Page Object Model means one-place UI fixes</li>
+            <li>Allure reports generated locally; Jira automatically updated with test results after each run</li>
+          </ul>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--brand-green);">~80%</div>
+          <div class="stat-label">Reduction in time to scaffold a test</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--brand-light);">11+</div>
+          <div class="stat-label">OPTA scenarios automated so far</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:var(--brand-gold);">100%</div>
+          <div class="stat-label">Tests linked back to Zephyr steps</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ SLIDE 16 ══ -->
+  <div class="slide bg-hero" id="s16">
+    <div class="full-width center">
+      <div class="slide-label">Summary</div>
+      <h1 style="font-size:clamp(1.8rem,3.5vw,3rem);">Key Takeaways</h1>
+      <div class="divider" style="margin: 16px auto 28px;"></div>
+      <div class="three-col" style="margin-bottom:28px;">
+        <div class="card accent-top">
+          <div style="font-size:1.8rem; margin-bottom:8px;">🔍</div>
+          <h3>SAP WebGUI is testable</h3>
+          <p>The DOM is complex but consistent. Text-based XPath patterns built on SAP's structure are reliable and reusable across scenarios.</p>
+        </div>
+        <div class="card gold-top">
+          <div style="font-size:1.8rem; margin-bottom:8px;">🤖</div>
+          <h3>AI reduces the hardest part</h3>
+          <p>The spec generator eliminates the most time-consuming step — turning Zephyr test steps into working TypeScript code automatically.</p>
+        </div>
+        <div class="card green-top">
+          <div style="font-size:1.8rem; margin-bottom:8px;">🎯</div>
+          <h3>Prioritise Web GUI first</h3>
+          <p>Web-based OPTA products offer the best ROI with existing tooling. Backend automation requires a different, more complex approach.</p>
+        </div>
+      </div>
+      <div class="card" style="max-width:760px; margin:0 auto; border-left:3px solid var(--brand-gold);">
+        <p style="font-size:1rem; color:var(--text-main);">Setting up <em>one fully automated scenario</em> — from Zephyr steps to CI/CD pipeline — now takes a matter of hours, not days. The framework is built to scale: each new Page Object method unlocks many future test scenarios at no extra locator-hunting cost.</p>
+      </div>
+      <p style="margin-top:28px; font-size:.85rem; color:var(--text-muted);">Questions? · OPTA Playwright Project · Spinifex Group · 2026</p>
+    </div>
+  </div>
+
+</div><!-- #deck -->
+
+<!-- ─── Navigation ──────────────────────────────────────────────────────────── -->
+<div id="nav">
+  <button class="nav-btn" onclick="prev()">◀ Prev</button>
+  <div id="nav-center">
+    <button id="slide-picker-btn" onclick="togglePicker()">
+      <span id="nav-slide-num">1 / 1</span>
+      <span id="nav-slide-sep">·</span>
+      <span id="nav-slide-title">Loading…</span>
+      <span id="nav-slide-caret">▾</span>
+    </button>
+    <div id="slide-picker"></div>
+  </div>
+  <button class="nav-btn" onclick="next()">Next ▶</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  let current  = 0;
+  let pickerOpen = false;
+
+  // Extract section label + heading from a slide
+  function getSlideInfo(slide) {
+    const labelEl = slide.querySelector('.slide-label');
+    const h1      = slide.querySelector('h1');
+    const h2      = slide.querySelector('h2');
+    const section = labelEl ? labelEl.textContent.trim() : '';
+    const heading = (h1 || h2) ? (h1 || h2).textContent.trim() : '';
+    return { section, heading };
+  }
+
+  // Build the dropdown list once
+  function buildPicker() {
+    const picker = document.getElementById('slide-picker');
+    picker.innerHTML = '';
+    slides.forEach((slide, i) => {
+      const { section, heading } = getSlideInfo(slide);
+      const btn = document.createElement('button');
+      btn.className = 'picker-item' + (i === 0 ? ' current' : '');
+      btn.innerHTML =
+        `<span class="picker-num">${i + 1}</span>` +
+        `<span class="picker-info">` +
+          `<span class="picker-section">${section}</span>` +
+          `<span class="picker-title">${heading}</span>` +
+        `</span>`;
+      btn.addEventListener('click', () => { goTo(i); togglePicker(false); });
+      picker.appendChild(btn);
+    });
+  }
+
+  // Sync the center button text and picker highlight
+  function updateNavCenter() {
+    const { heading } = getSlideInfo(slides[current]);
+    document.getElementById('nav-slide-num').textContent   = `${current + 1} / ${total}`;
+    document.getElementById('nav-slide-title').textContent = heading;
+    document.querySelectorAll('.picker-item').forEach((el, i) => {
+      el.classList.toggle('current', i === current);
+    });
+  }
+
+  function togglePicker(forceState) {
+    pickerOpen = forceState !== undefined ? forceState : !pickerOpen;
+    document.getElementById('slide-picker').classList.toggle('open', pickerOpen);
+    if (pickerOpen) {
+      const active = document.querySelector('.picker-item.current');
+      if (active) active.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  // Close picker when clicking outside the nav-center
+  document.addEventListener('click', e => {
+    if (!document.getElementById('nav-center').contains(e.target)) {
+      togglePicker(false);
+    }
+  });
+
+  function goTo(n) {
+    const prevSlide = slides[current];
+    prevSlide.classList.remove('active');
+    prevSlide.classList.add('exit-left');
+    setTimeout(() => prevSlide.classList.remove('exit-left'), 450);
+
+    current = (n + total) % total;
+    slides[current].classList.add('active');
+
+    updateNavCenter();
+    document.getElementById('progress-bar').style.width =
+      ((current + 1) / total * 100) + '%';
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') next();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') prev();
+    if (e.key === 'Escape') togglePicker(false);
+  });
+
+  // Trim leading/trailing whitespace inside code blocks
+  document.querySelectorAll('.code-block').forEach(el => {
+    el.innerHTML = el.innerHTML.trim();
+  });
+
+  // Init
+  buildPicker();
+  updateNavCenter();
+  document.getElementById('progress-bar').style.width = (1 / total * 100) + '%';
+</script>
+
+</body>
+</html>
