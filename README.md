@@ -57,7 +57,7 @@ Use it as a guide, not a word-for-word script — keep it conversational and nat
 
 **What's on screen:** Three red cards — Inspect Element, Hunt for XPath, Write Spec Manually.
 
-> "Before any AI tooling, this was the reality. Every single test file was built by hand in three painful steps.
+> "Before any AI tooling, this was the reality. Every single test file was built by hand in three steps.
 >
 > First, you'd open Inspect Element on the SAP screen and dig through the HTML. Then you'd hunt for a reliable XPath — and if you've ever looked at the SAP DOM, you know it's deeply nested with generated IDs that change all the time. Finally, you'd hand-write the whole spec file and debug it until it passed.
 >
@@ -91,7 +91,7 @@ Use it as a guide, not a word-for-word script — keep it conversational and nat
 >
 > But I want to be clear — this isn't fully hands-off. On the right you can see what **still needs a human**: reviewing the logic, filling TODOs, handling complex interactions like drag-and-drop, and the edge cases that Zephyr steps don't capture."
 
-**Transition:** "Now let me go a level deeper into *how* that generator actually turns plain English into code."
+**Transition:** "Now let me give the floor to Je to present how that generator actually turns plain English into code."
 
 ---
 
