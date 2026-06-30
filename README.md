@@ -27,7 +27,7 @@ Use it as a guide, not a word-for-word script — keep it conversational and nat
 >
 > First, the **Manual Era** — where every test was hand-built: inspecting elements, crafting XPaths by hand, and coding everything from scratch.
 >
-> Then the **AI-Assisted** phase — where we brought in a GitHub Copilot spec generator that reads directly from Zephyr.
+> Then the **AI-Assisted** phase — where we brought in an Agent skill spec generator that reads directly from Zephyr.
 >
 > And finally the **Integrated** phase — where everything ties together with Zephyr, Jira, and Allure.
 >
