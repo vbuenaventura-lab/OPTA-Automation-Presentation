@@ -71,7 +71,7 @@ Use it as a guide, not a word-for-word script — keep it conversational and nat
 
 **What's on screen:** The turning point — flow diagram from Jira → Zephyr → AI → Pattern Matching → .spec.ts.
 
-> "This was the turning point. Instead of writing test files from scratch, we built a **GitHub Copilot agent skill** that reads the test steps directly out of Zephyr Squad and generates a ready-to-run Playwright spec file.
+> "This was the turning point. Instead of writing test files from scratch, we built a **Agent Skill agent skill** that reads the test steps directly out of Zephyr Squad and generates a ready-to-run Playwright spec file.
 >
 > So the flow is: we start from a Jira issue, it pulls the linked Zephyr test steps, the AI skill processes them, matches them against known SAP patterns, and out comes a `.spec.ts` file.
 >
@@ -95,13 +95,13 @@ Use it as a guide, not a word-for-word script — keep it conversational and nat
 
 ---
 
-## Slide 6 — How the GitHub Copilot Skill Generates the Spec
+## Slide 6 — How the Agent Skill Generates the Spec
 
 **What's on screen:** 5 steps + a simplified code sample of the generator flow.
 
 > "So under the hood, here's what's happening.
 >
-> We trigger the generator — and a quick note here, our preferred way is the terminal command because it doesn't burn GitHub Copilot tokens. You *can* invoke it through Copilot Chat as well, but that uses more token budget, so we save that for one-off requests.
+> We trigger the generator — and a quick note here, our preferred way is the terminal command because it doesn't burn Agent Skill tokens. You *can* invoke it through Copilot Chat as well, but that uses more token budget, so we save that for one-off requests.
 >
 > From there, the script resolves the linked Zephyr test, pulls every step, and the AI does pattern matching — it recognises things like navigation, dropdowns, tree drilling — and maps them to our existing page object methods. The spec file gets written to disk, and importantly, every step carries a comment pointing back to its Zephyr step number for traceability.
 >
