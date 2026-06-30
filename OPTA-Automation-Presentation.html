@@ -399,20 +399,11 @@
   <div class="slide bg-dark2" id="s_pw">
     <div class="full-width">
       <h2>Automation using Playwright</h2>
+      <ul style="margin-bottom:18px; gap:8px;">
+        <li>Playwright supports <strong>Web GUI based automation</strong> — it controls a real browser to interact with web-based SAP screens just like a human tester would</li>
+        <li>We write our test scripts in <strong>TypeScript</strong> (a typed version of JavaScript), which gives us better code quality, autocomplete, and error checking in VS Code</li>
+      </ul>
       <div class="two-col">
-        <div>
-          <p style="margin-bottom:18px;">We write our test scripts in <strong>TypeScript</strong> (a typed version of JavaScript), which gives us better code quality, autocomplete, and error checking in VS Code.</p>
-          <div class="card gold-top">
-            <h3>Why Playwright for SAP WebGUI?</h3>
-            <ul>
-              <li>Supports <strong>XPath selectors</strong> — essential for navigating SAP’s complex HTML structure</li>
-              <li>Built-in <strong>auto-wait</strong> — handles SAP’s slow load times without brittle sleep calls</li>
-              <li>Runs a <strong>real Chromium browser</strong>, so what it sees matches what a tester sees</li>
-              <li>Native <strong>VS Code Test Explorer</strong> integration for running and debugging tests</li>
-              <li>Produces detailed <strong>screenshots and traces</strong> on failure for easy debugging</li>
-            </ul>
-          </div>
-        </div>
         <div>
           <div class="two-col" style="gap:14px; margin-bottom:14px;">
             <div class="stat-box">
@@ -444,6 +435,18 @@
               <div class="flow-box" style="min-width:80px; font-size:.8rem; border-color:var(--brand-gold); color:var(--brand-gold);">SAP<br/>WebGUI</div>
             </div>
             <p style="font-size:.85rem;">Playwright drives Chromium, which loads SAP WebGUI in the browser — our TypeScript code then interacts with the live SAP WebGUI just like a tester would.</p>
+          </div>
+        </div>
+        <div>
+          <div class="card gold-top">
+            <h3>Why Playwright for SAP WebGUI?</h3>
+            <ul>
+              <li>Supports <strong>XPath selectors</strong> — essential for navigating SAP’s complex HTML structure</li>
+              <li>Built-in <strong>auto-wait</strong> — handles SAP’s slow load times without brittle sleep calls</li>
+              <li>Runs a <strong>real Chromium browser</strong>, so what it sees matches what a tester sees</li>
+              <li>Native <strong>VS Code Test Explorer</strong> integration for running and debugging tests</li>
+              <li>Produces detailed <strong>screenshots and traces</strong> on failure for easy debugging</li>
+            </ul>
           </div>
         </div>
       </div>
