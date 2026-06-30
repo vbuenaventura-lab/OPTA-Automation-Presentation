@@ -11,11 +11,11 @@ Use it as a guide, not a word-for-word script — keep it conversational and nat
 
 > "Good afternoon Darren, everyone. So today we'll be sharing with you how we've been automating our test cases for OPTA.
 >
-> We'll walk through a little bit of background — how we moved from manually creating each test file, to now being AI-assisted in generating those test files.
+> We will walk through a little bit of background on how we moved from manually creating each test file, to now being AI-assisted in generating those test files.
 >
 > We'll also talk about some of the integrations we did along the way, specifically with **Zephyr**, **Jira**, and **Allure reporting**. And towards the end, we'll be honest about some of the challenges we hit and where we're heading next.
 >
-> I've also got a few short recordings to show you the tooling in action. Feel free to jump in with questions at any point."
+> We will also show you later the tooling in action."
 
 ---
 
